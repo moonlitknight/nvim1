@@ -98,16 +98,18 @@ function M.find_typescript_imports(import_lines)
     local typescript_script = config.typescript_script_path
     local package_class_pairs = {}
 
-    -- Define two separate regex patterns for double and single quotes
-    local double_quote_regex = '^import%s*{([^}]+)}%s*from%s*"([^"]+)"%s*;?$'
+    -- Existing single-quoted regex
     local single_quote_regex = "^import%s*{([^}]+)}%s*from%s*'([^']+)'%s*;?$"
 
-    -- Parse each import line to extract package and class names
+    -- Preprocess each import line
     for _, line in ipairs(import_lines) do
-        local classes_str, package = line:match(double_quote_regex)
-        if not classes_str then
-            classes_str, package = line:match(single_quote_regex)
-        end
+        -- Convert double quotes to single quotes
+        local processed_line = line:gsub('"', "'")
+
+        show_info("Processed line (converted double quotes to single quotes): " .. processed_line)
+
+        -- Apply the single-quoted regex
+        local classes_str, package = processed_line:match(single_quote_regex)
 
         if classes_str and package then
             -- Split the classes by comma and trim whitespace
