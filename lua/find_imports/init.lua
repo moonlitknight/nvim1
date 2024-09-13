@@ -99,8 +99,8 @@ function M.find_typescript_imports(import_lines)
     local package_class_pairs = {}
 
     -- Define two separate regex patterns for double and single quotes
-    local double_quote_regex = 'import%s*{([^}]+)}%s*from%s*"([^"]+)"'
-    local single_quote_regex = 'import%s*{([^}]+)}%s*from%s*\'([^\']+)\''
+    local double_quote_regex = '^import%s*{([^}]+)}%s*from%s*"([^"]+)"%s*;?$'
+    local single_quote_regex = "^import%s*{([^}]+)}%s*from%s*'([^']+)'%s*;?$"
 
     -- Parse each import line to extract package and class names
     for _, line in ipairs(import_lines) do
