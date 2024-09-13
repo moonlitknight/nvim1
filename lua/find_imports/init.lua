@@ -6,28 +6,33 @@ local config = {
     root_dir = vim.fn.getcwd(), -- Default to current working directory
     java_script_path = "findjavaimports.sh", -- Default assumes script is in PATH
     typescript_script_path = "findtypescriptimports.sh", -- Default assumes script is in PATH
+    debug = false, -- Toggle for debugging
 }
 
 -- Utility function to display error messages
 local function show_error(msg)
-    vim.api.nvim_err_writeln(msg)
+    vim.api.nvim_err_writeln("[FindImports Error] " .. msg)
+end
+
+-- Utility function to display informational messages
+local function show_info(msg)
+    if config.debug then
+        vim.api.nvim_echo({{msg, "Normal"}}, true, {})
+    end
 end
 
 -- Utility function to get visual selection lines
 local function get_visual_selection()
-    -- Save the current mode
-    local mode = vim.fn.mode()
-    -- Get the start and end positions of the visual selection
+    -- Exit visual mode and get the selection
     vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes("<Esc>", true, false, true), 'n', true)
-    local pos_start = vim.fn.getpos("'<")
-    local pos_end = vim.fn.getpos("'>")
+    local start_pos = vim.fn.getpos("'<")
+    local end_pos = vim.fn.getpos("'>")
 
-    local start_row, start_col = pos_start[2], pos_start[3]
-    local end_row, end_col = pos_end[2], pos_end[3]
+    local start_row = start_pos[2]
+    local end_row = end_pos[2]
 
-    -- Get the lines in the range
+    -- Get lines between start_row and end_row
     local lines = vim.api.nvim_buf_get_lines(0, start_row - 1, end_row, false)
-
     return lines
 end
 
@@ -43,6 +48,9 @@ function M.find_java_imports(import_lines)
         local import_path = line:match('import%s+([%w%.]+);')
         if import_path then
             table.insert(classnames, import_path)
+            show_info("Parsed Java import: " .. import_path)
+        else
+            show_info("Skipped invalid Java import line: " .. line)
         end
     end
 
@@ -52,15 +60,24 @@ function M.find_java_imports(import_lines)
     end
 
     -- Construct the shell command
-    -- Ensure the shell scripts are executable and in PATH, or specify the full path
     local cmd = { java_script, root_dir }
     for _, classname in ipairs(classnames) do
         table.insert(cmd, classname)
     end
 
+    show_info("Executing Java shell script: " .. table.concat(cmd, " "))
+
     -- Execute the shell script and capture the output
     local output = vim.fn.systemlist(cmd)
     local exit_code = vim.v.shell_error
+
+    if config.debug then
+        show_info("Shell script exited with code: " .. exit_code)
+        show_info("Shell script output:")
+        for _, line in ipairs(output) do
+            show_info(line)
+        end
+    end
 
     if exit_code ~= 0 then
         show_error("Error running " .. java_script .. ":\n" .. table.concat(output, "\n"))
@@ -81,18 +98,26 @@ function M.find_typescript_imports(import_lines)
     local typescript_script = config.typescript_script_path
     local package_class_pairs = {}
 
+    -- Define two separate regex patterns for double and single quotes
+    local double_quote_regex = 'import%s*{([^}]+)}%s*from%s*"([^"]+)"'
+    local single_quote_regex = 'import%s*{([^}]+)}%s*from%s*\'([^\']+)\''
+
     -- Parse each import line to extract package and class names
     for _, line in ipairs(import_lines) do
-        -- Example line: import {Foo1, Foo2} from 'foo_package';
-        -- Updated pattern to accept both single and double quotes
-        local classes_str, package = line:match('import%s*{([^}]+)}%s*from%s*["\']([^"\']+)["\']')
+        local classes_str, package = line:match(double_quote_regex)
+        if not classes_str then
+            classes_str, package = line:match(single_quote_regex)
+        end
 
         if classes_str and package then
             -- Split the classes by comma and trim whitespace
             for class in classes_str:gmatch("%s*([^,%s]+)%s*") do
                 local pair = package .. "/" .. class
                 table.insert(package_class_pairs, pair)
+                show_info("Parsed TypeScript import: " .. pair)
             end
+        else
+            show_info("Skipped invalid TypeScript import line: " .. line)
         end
     end
 
@@ -102,15 +127,24 @@ function M.find_typescript_imports(import_lines)
     end
 
     -- Construct the shell command
-    -- Ensure the shell scripts are executable and in PATH, or specify the full path
     local cmd = { typescript_script, root_dir }
     for _, pair in ipairs(package_class_pairs) do
         table.insert(cmd, pair)
     end
 
+    show_info("Executing TypeScript shell script: " .. table.concat(cmd, " "))
+
     -- Execute the shell script and capture the output
     local output = vim.fn.systemlist(cmd)
     local exit_code = vim.v.shell_error
+
+    if config.debug then
+        show_info("Shell script exited with code: " .. exit_code)
+        show_info("Shell script output:")
+        for _, line in ipairs(output) do
+            show_info(line)
+        end
+    end
 
     if exit_code ~= 0 then
         show_error("Error running " .. typescript_script .. ":\n" .. table.concat(output, "\n"))
@@ -157,6 +191,7 @@ function M.find_imports()
     -- Open each file in a new Neovim tab
     for _, filepath in ipairs(files_to_open) do
         vim.cmd("tabnew " .. vim.fn.fnameescape(filepath))
+        show_info("Opened file: " .. filepath)
     end
 end
 
@@ -187,6 +222,9 @@ function M.setup(user_config)
                 show_error("findtypescriptimports.sh not executable or not found at: " .. user_config.typescript_script_path)
                 return
             end
+        end
+        if user_config.debug ~= nil then
+            config.debug = user_config.debug
         end
     end
 
