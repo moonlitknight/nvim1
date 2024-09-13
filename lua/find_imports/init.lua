@@ -106,7 +106,7 @@ function M.find_typescript_imports(import_lines)
         -- Convert double quotes to single quotes
         local processed_line = line:gsub('"', "'")
 
-        show_info("Processed line (converted double quotes to single quotes): " .. processed_line)
+        show_error("Processed line (converted double quotes to single quotes): " .. processed_line)
 
         -- Apply the single-quoted regex
         local classes_str, package = processed_line:match(single_quote_regex)
@@ -119,7 +119,7 @@ function M.find_typescript_imports(import_lines)
                 show_info("Parsed TypeScript import: " .. pair)
             end
         else
-            show_info("Skipped invalid TypeScript import line: " .. line)
+            show_error("Skipped invalid TypeScript import line: " .. line)
         end
     end
 
