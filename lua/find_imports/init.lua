@@ -84,7 +84,8 @@ function M.find_typescript_imports(import_lines)
     -- Parse each import line to extract package and class names
     for _, line in ipairs(import_lines) do
         -- Example line: import {Foo1, Foo2} from 'foo_package';
-        local classes_str, package = line:match("import%s+{([^}]+)}%s+from%s+'([^']+)'")
+        -- Updated pattern to accept both single and double quotes
+        local classes_str, quote, package = line:match('import%s+{([^}]+)}%s+from%s+([\'"])([^\'"]+)%2')
         if classes_str and package then
             -- Split the classes by comma and trim whitespace
             for class in classes_str:gmatch("%s*([^,%s]+)%s*") do
@@ -163,13 +164,28 @@ function M.setup(user_config)
     -- Merge user_config into default config
     if user_config then
         if user_config.root_dir then
-            config.root_dir = user_config.root_dir
+            if vim.fn.isdirectory(user_config.root_dir) == 1 then
+                config.root_dir = user_config.root_dir
+            else
+                show_error("Invalid root_dir: " .. user_config.root_dir)
+                return
+            end
         end
         if user_config.java_script_path then
-            config.java_script_path = user_config.java_script_path
+            if vim.fn.executable(user_config.java_script_path) == 1 then
+                config.java_script_path = user_config.java_script_path
+            else
+                show_error("findjavaimports.sh not executable or not found at: " .. user_config.java_script_path)
+                return
+            end
         end
         if user_config.typescript_script_path then
-            config.typescript_script_path = user_config.typescript_script_path
+            if vim.fn.executable(user_config.typescript_script_path) == 1 then
+                config.typescript_script_path = user_config.typescript_script_path
+            else
+                show_error("findtypescriptimports.sh not executable or not found at: " .. user_config.typescript_script_path)
+                return
+            end
         end
     end
 
