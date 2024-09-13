@@ -85,7 +85,8 @@ function M.find_typescript_imports(import_lines)
     for _, line in ipairs(import_lines) do
         -- Example line: import {Foo1, Foo2} from 'foo_package';
         -- Updated pattern to accept both single and double quotes
-        local classes_str, package = line:match('import%s+{([^}]+)}%s+from%s+["\']([^"\']+)["\']')
+        local classes_str, package = line:match('import%s*{([^}]+)}%s*from%s*["\']([^"\']+)["\']')
+
         if classes_str and package then
             -- Split the classes by comma and trim whitespace
             for class in classes_str:gmatch("%s*([^,%s]+)%s*") do
