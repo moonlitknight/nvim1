@@ -3,7 +3,7 @@ local M = {}
 
 -- Default configuration
 local config = {
-    root_dir = vim.fn.getcwd(), -- Default to current working directory
+    root_dir = "/usr/app", -- Default to /usr/app
     java_script_path = "findjavaimports.sh", -- Default assumes script is in PATH
     typescript_script_path = "findtypescriptimports.sh", -- Default assumes script is in PATH
     debug = false, -- Toggle for debugging
