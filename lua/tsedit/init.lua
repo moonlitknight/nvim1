@@ -12,9 +12,6 @@ M.config = {
 function M.setup(user_config)
   M.config = vim.tbl_deep_extend("force", M.config, user_config or {})
 
-  -- Set up key mappings
-  vim.api.nvim_set_keymap('n', '<leader>.ts', ':lua require("ts_embedded_edit").ts_start_edit()<CR>', { noremap = true, silent = true })
-  vim.api.nvim_set_keymap('n', '<leader>.te', ':lua require("ts_embedded_edit").ts_end_edit()<CR>', { noremap = true, silent = true })
 end
 
 -- Function to start editing TypeScript
