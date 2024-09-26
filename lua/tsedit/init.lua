@@ -13,8 +13,6 @@ function M.setup(user_config)
   M.config = vim.tbl_deep_extend("force", M.config, user_config or {})
 
   -- Set up key mappings
-  vim.api.nvim_set_keymap('n', '<leader>.S', ':lua require("tsedit").ts_start_edit()<CR>', { noremap = true, silent = true })
-  vim.api.nvim_set_keymap('n', '<leader>.E', ':lua require("tsedit").ts_end_edit()<CR>', { noremap = true, silent = true })
 end
 
 -- Function to start editing TypeScript
@@ -57,8 +55,8 @@ function M.ts_start_edit()
     return
   end
   
-  -- Open the temporary file in a split window
-  vim.cmd("split " .. temp_file)
+  -- Open the temporary file in a split window at the top
+  vim.cmd("topleft split " .. temp_file)
   
   -- Delete the TypeScript content from the original buffer
   vim.api.nvim_buf_set_lines(current_buf, start_line, end_line, false, {M.config.delimiter, M.config.delimiter})
