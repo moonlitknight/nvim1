@@ -12,7 +12,6 @@ M.config = {
 function M.setup(user_config)
   M.config = vim.tbl_deep_extend("force", M.config, user_config or {})
 
-  -- Set up key mappings
 end
 
 -- Function to start editing TypeScript
@@ -58,8 +57,9 @@ function M.ts_start_edit()
   -- Open the temporary file in a split window at the top
   vim.cmd("topleft split " .. temp_file)
   
-  -- Delete the TypeScript content from the original buffer
-  vim.api.nvim_buf_set_lines(current_buf, start_line, end_line, false, {M.config.delimiter, M.config.delimiter})
+  -- Replace the TypeScript content with a placeholder in the original buffer
+  local placeholder = {M.config.delimiter, M.config.delimiter}
+  vim.api.nvim_buf_set_lines(current_buf, start_line, end_line, false, placeholder)
 end
 
 -- Function to end editing TypeScript
