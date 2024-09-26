@@ -1,4 +1,4 @@
--- tsedit/init.lua
+-- ts_embedded_edit.lua
 
 local M = {}
 
@@ -60,9 +60,10 @@ function M.ts_start_edit()
   -- Open the temporary file in a split window at the top
   vim.cmd("topleft split " .. temp_file)
   
-  -- Replace the TypeScript content with a placeholder in the original buffer
-  local placeholder = {M.config.delimiter, M.config.delimiter}
-  vim.api.nvim_buf_set_lines(current_buf, start_line, end_line, false, placeholder)
+  -- Store the original buffer number and line range in the temporary buffer's variables
+  vim.api.nvim_buf_set_var(vim.api.nvim_get_current_buf(), "original_buf", current_buf)
+  vim.api.nvim_buf_set_var(vim.api.nvim_get_current_buf(), "start_line", start_line)
+  vim.api.nvim_buf_set_var(vim.api.nvim_get_current_buf(), "end_line", end_line)
 end
 
 -- Function to end editing TypeScript
@@ -76,43 +77,16 @@ function M.ts_end_edit()
     return
   end
   
+  -- Get the original buffer number and line range
+  local original_buf = vim.api.nvim_buf_get_var(current_buf, "original_buf")
+  local start_line = vim.api.nvim_buf_get_var(current_buf, "start_line")
+  local end_line = vim.api.nvim_buf_get_var(current_buf, "end_line")
+  
   -- Get the content of the temporary buffer
   local lines = vim.api.nvim_buf_get_lines(current_buf, 0, -1, false)
-  local ts_content = table.concat(lines, "\n")
-  
-  -- Get the original file name
-  local original_file = current_file:sub(1, -#M.config.temp_suffix - 1)
-  local original_buf = vim.fn.bufnr(original_file)
-  
-  if original_buf == -1 then
-    print("Original buffer not found.")
-    return
-  end
-  
-  -- Find the TypeScript section in the original buffer
-  local original_lines = vim.api.nvim_buf_get_lines(original_buf, 0, -1, false)
-  local start_line, end_line
-  for i, line in ipairs(original_lines) do
-    if line:match("^" .. M.config.delimiter .. "$") then
-      if not start_line then
-        start_line = i
-      else
-        end_line = i
-        break
-      end
-    end
-  end
-  
-  if not start_line or not end_line then
-    print("Could not find TypeScript section in the original file.")
-    return
-  end
   
   -- Replace the content in the original buffer
-  local new_lines = vim.split(ts_content, "\n")
-  table.insert(new_lines, 1, M.config.delimiter)
-  table.insert(new_lines, M.config.delimiter)
-  vim.api.nvim_buf_set_lines(original_buf, start_line, end_line + 1, false, new_lines)
+  vim.api.nvim_buf_set_lines(original_buf, start_line + 1, end_line - 1, false, lines)
   
   -- Close the temporary buffer and delete the temporary file
   vim.cmd("bdelete!")
@@ -122,4 +96,4 @@ function M.ts_end_edit()
   vim.api.nvim_set_current_buf(original_buf)
 end
 
-return M
+return M1G
