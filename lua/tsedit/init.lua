@@ -93,4 +93,4 @@ function M.ts_end_edit()
   vim.api.nvim_set_current_buf(original_buf)
 end
 
-return M1G
+return M
