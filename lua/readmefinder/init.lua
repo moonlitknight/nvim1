@@ -46,20 +46,36 @@ function M.open_readme_finder()
 
   local readme_files = find_readme_files(project_root)
   
-  require('telescope.builtin').find_files {
+  local pickers = require("telescope.pickers")
+  local finders = require("telescope.finders")
+  local conf = require("telescope.config").values
+  local actions = require("telescope.actions")
+  local action_state = require("telescope.actions.state")
+
+  pickers.new({}, {
     prompt_title = "README Files",
-    cwd = project_root,
-    find_command = { "find", ".", "-name", "README.md" },
-    attach_mappings = function(_, map)
-      map('i', '<CR>', function(prompt_bufnr)
-        local selection = require('telescope.actions.state').get_selected_entry()
-        require('telescope.actions').close(prompt_bufnr)
+    finder = finders.new_table {
+      results = readme_files,
+      entry_maker = function(entry)
+        return {
+          value = entry,
+          display = entry,
+          ordinal = entry,
+          path = entry,
+        }
+      end
+    },
+    sorter = conf.generic_sorter({}),
+    previewer = conf.file_previewer({}),
+    attach_mappings = function(prompt_bufnr, map)
+      actions.select_default:replace(function()
+        actions.close(prompt_bufnr)
+        local selection = action_state.get_selected_entry()
         vim.cmd('edit ' .. selection.path)
       end)
       return true
     end,
-    previewer = require('telescope.previewers').vim_buffer_cat.new
-  }
+  }):find()
 end
 
 -- Setup function
