@@ -22,9 +22,9 @@ local function find_project_root()
   return nil
 end
 
--- Function to find all README.md files
+-- Function to find all README.md files, excluding node_modules
 local function find_readme_files(root)
-  local command = string.format("find %s -name README.md", root)
+  local command = string.format("find %s -name README.md -not -path '*/node_modules/*'", root)
   local handle = io.popen(command)
   local result = handle:read("*a")
   handle:close()
